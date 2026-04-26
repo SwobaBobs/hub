@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novus gradus XV - Detective Terminal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Courier+Prime:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, #000 3px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, #000 3px);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            font-family: 'Courier Prime', monospace;
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .detective-board {
+            background: #8b6f47;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px),
+                url("image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.15'/%3E%3C/svg%3E");
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.8),
+                inset 0 0 100px rgba(0,0,0,0.3);
+            position: relative;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+            transition: opacity 0.5s ease;
+        }
+
+        .detective-board::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 40px;
+            background: #4a4a4a;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .terminal-window {
+            background: #0a0f0a;
+            border: 3px solid #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 
+                0 10px 40px rgba(0,0,0,0.6),
+                inset 0 0 20px rgba(0,255,0,0.05);
+            position: relative;
+            transition: all 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode {
+            background: #1a0505;
+            border-color: #8b0000;
+            box-shadow: 
+                0 0 60px rgba(139, 0, 0, 0.8),
+                inset 0 0 40px rgba(255, 0, 0, 0.2);
+        }
+
+        .terminal-window.void-abyss-mode {
+            background: #000000 !important;
+            border-color: #333 !important;
+            box-shadow: 0 0 100px rgba(255, 255, 255, 0.1), inset 0 0 60px rgba(0, 0, 0, 0.9);
+        }
+        
+        .terminal-window.memory-mode {
+            background: #ffffff !important;
+            border-color: #fff !important;
+            box-shadow: 0 0 100px rgba(255, 255, 255, 0.8), inset 0 0 60px rgba(255, 255, 255, 0.5);
+        }
+
+        .terminal-window.matrix-mode { background: #001100; }
+        .terminal-window.fire-mode { background: #1a0a00; }
+        .terminal-window.rainbow-mode { 
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            animation: rainbowBg 3s linear infinite;
+        }
+        .terminal-window.party-mode {
+            animation: partyBg 0.5s linear infinite;
+        }
+        .terminal-window.zen-mode { background: #0a1a1a; }
+        .terminal-window.chaos-mode { background: #1a001a; }
+        .terminal-window.void-mode { background: #000000; }
+
+        @keyframes rainbowBg {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        @keyframes partyBg {
+            0%, 100% { background: #ff0000; }
+            20% { background: #00ff00; }
+            40% { background: #0000ff; }
+            60% { background: #ffff00; }
+            80% { background: #ff00ff; }
+        }
+
+        .terminal-header {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #00ff00;
+            position: relative;
+            transition: border-color 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .terminal-header,
+        .terminal-window.void-abyss-mode .terminal-header {
+            border-bottom-color: #ff0000;
+            background: linear-gradient(180deg, #2a0a0a 0%, #1a0505 100%);
+        }
+        
+        .terminal-window.void-abyss-mode .terminal-header {
+            background: linear-gradient(180deg, #000 0%, #0a0a0a 100%) !important;
+            border-bottom-color: #444 !important;
+        }
+        
+        .terminal-window.memory-mode .terminal-header {
+            background: linear-gradient(180deg, #fff 0%, #f0f0f0 100%) !important;
+            border-bottom-color: #fff !important;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.3);
+        }
+
+        .close { background: #ff5f56; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #27ca40; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0,255,0,0.5);
+            padding-right: 60px;
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .terminal-title {
+            color: #ff4444;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+        }
+        
+        .terminal-window.void-abyss-mode .terminal-title {
+            color: #fff !important;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .terminal-window.memory-mode .terminal-title {
+            color: #000 !important;
+            text-shadow: 0 0 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .terminal-body {
+            background: #050805;
+            padding: 20px;
+            min-height: 500px;
+            max-height: 60vh;
+            overflow-y: auto;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #00ff00;
+            position: relative;
+            transition: background 0.8s ease, color 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .terminal-body {
+            background: #0d0202;
+            color: #ff6b6b;
+        }
+        
+        .terminal-window.void-abyss-mode .terminal-body {
+            background: #000000 !important;
+            color: #ffffff !important;
+        }
+        
+        .terminal-window.memory-mode .terminal-body {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        .terminal-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03),
+                rgba(0, 255, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            transition: background 0.8s ease;
+            z-index: 1;
+        }
+
+        .terminal-window.repentance-mode .terminal-body::before {
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255, 0, 0, 0.04),
+                rgba(255, 0, 0, 0.04) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+        }
+        
+        .terminal-window.void-abyss-mode .terminal-body::before {
+            display: none;
+        }
+        
+        .terminal-window.memory-mode .terminal-body::before {
+            display: none;
+        }
+
+        .matrix-rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-family: monospace;
+            font-size: 14px;
+            color: #0f0;
+            opacity: 0.3;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        /* Memory Mode - White with Glowing Stars and Waves */
+        .memory-stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .memory-star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px rgba(255, 255, 255, 0.8);
+            animation: starGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes starGlow {
+            0%, 100% { 
+                opacity: 0.3; 
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1.5);
+            }
+        }
+        
+        .memory-waves {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .memory-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background: linear-gradient(180deg, transparent 0%, rgba(200, 220, 255, 0.3) 100%);
+            animation: waveMove 10s linear infinite;
+        }
+        
+        .memory-wave:nth-child(2) {
+            animation-delay: -5s;
+            opacity: 0.5;
+        }
+        
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Void Sparkles */
+        .void-sparkles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .void-sparkle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            animation: sparkleFloat 4s infinite ease-in-out;
+            opacity: 0;
+        }
+
+        @keyframes sparkleFloat {
+            0%, 100% { 
+                opacity: 0; 
+                transform: translateY(100vh) scale(0);
+            }
+            10% { opacity: 1; }
+            50% {
+                opacity: 0.8;
+                transform: translateY(50vh) scale(1);
+            }
+            90% { opacity: 1; }
+        }
+
+        .terminal-line {
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+            word-wrap: break-word;
+        }
+
+        .prompt {
+            color: #00ff00;
+            text-shadow: 0 0 8px rgba(0,255,0,0.6);
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .prompt {
+            color: #ff4444;
+            text-shadow: 0 0 8px rgba(255, 0, 0, 0.7);
+        }
+        
+        .terminal-window.void-abyss-mode .prompt {
+            color: #fff !important;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        .terminal-window.memory-mode .prompt {
+            color: #000 !important;
+            text-shadow: none !important;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: #00ff00;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            box-shadow: 0 0 10px rgba(0,255,0,0.8);
+            transition: background 0.8s ease, box-shadow 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .cursor {
+            background: #ff3333;
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.9);
+        }
+        
+        .terminal-window.void-abyss-mode .cursor {
+            background: #fff !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .terminal-window.memory-mode .cursor {
+            background: #000 !important;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .evidence-pin {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+            border-radius: 50%;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .pin-top-left { top: -8px; left: -8px; }
+        .pin-top-right { top: -8px; right: -8px; }
+        .pin-bottom-left { bottom: -8px; left: -8px; }
+        .pin-bottom-right { bottom: -8px; right: -8px; }
+
+        .classified-stamp {
+            position: absolute;
+            top: 80px;
+            right: 40px;
+            border: 3px solid #8b0000;
+            color: #8b0000;
+            padding: 10px 20px;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            transform: rotate(15deg);
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #00ff00;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            flex: 1;
+            caret-color: #00ff00;
+            text-shadow: 0 0 8px rgba(0,255,0,0.6);
+            transition: color 0.8s ease, caret-color 0.8s ease, text-shadow 0.8s ease;
+        }
+
+        .terminal-window.repentance-mode .terminal-input {
+            color: #ff6b6b;
+            caret-color: #ff3333;
+            text-shadow: 0 0 8px rgba(255, 100, 100, 0.7);
+        }
+        
+        .terminal-window.void-abyss-mode .terminal-input {
+            color: #fff !important;
+            caret-color: #fff !important;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        .terminal-window.memory-mode .terminal-input {
+            color: #000 !important;
+            caret-color: #000 !important;
+            text-shadow: none !important;
+        }
+
+        .glitch {
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 90%, 100% { transform: translate(0); }
+            91% { transform: translate(-2px, 2px); }
+            92% { transform: translate(2px, -2px); }
+            93% { transform: translate(-2px, 0); }
+            94% { transform: translate(0); }
+        }
+
+        .red-string {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8b0000, transparent);
+            transform-origin: left center;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .repentance-link, .void-link {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 16px;
+            background: rgba(139, 0, 0, 0.3);
+            border-left: 3px solid #ff4444;
+            color: #ffccaa;
+            text-decoration: none;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .repentance-link:hover, .void-link:hover {
+            background: rgba(139, 0, 0, 0.6);
+            padding-left: 20px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 200, 200, 0.8);
+        }
+        
+        .void-link {
+            display: inline-block;
+            margin: 15px 0;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            text-decoration: none;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            transition: all 0.4s ease;
+            animation: voidLinkPulse 2s infinite;
+        }
+        
+        .void-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            transform: scale(1.02);
+        }
+        
+        @keyframes voidLinkPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.5); }
+        }
+
+        .cryptic-message, .void-message {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px dashed #ff4444;
+            background: rgba(139, 0, 0, 0.15);
+            font-style: italic;
+            line-height: 1.8;
+        }
+        
+        .void-message {
+            font-style: italic;
+            color: #ccc;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: voidPulse 3s infinite ease-in-out;
+            border: 1px dashed rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.03);
+        }
+        
+        @keyframes voidPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .truth-reveal {
+            color: #ffcc88;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 200, 100, 0.6);
+        }
+
+        .ascii-art {
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.2;
+            white-space: pre;
+            margin: 10px 0;
+        }
+
+        .glitch-effect {
+            animation: textGlitch 0.3s infinite;
+        }
+
+        @keyframes textGlitch {
+            0% { transform: translate(0); filter: hue-rotate(0deg); }
+            20% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
+            40% { transform: translate(2px, -2px); filter: hue-rotate(180deg); }
+            60% { transform: translate(-2px, -2px); filter: hue-rotate(270deg); }
+            80% { transform: translate(2px, 2px); filter: hue-rotate(360deg); }
+            100% { transform: translate(0); filter: hue-rotate(0deg); }
+        }
+
+        .rainbow-text {
+            animation: rainbowText 2s linear infinite;
+        }
+
+        @keyframes rainbowText {
+            0% { color: #ff0000; }
+            20% { color: #ffff00; }
+            40% { color: #00ff00; }
+            60% { color: #00ffff; }
+            80% { color: #0000ff; }
+            100% { color: #ff0000; }
+        }
+
+        .fire-text {
+            color: #ff6600;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff6600, 0 0 30px #ffcc00;
+            animation: fireFlicker 0.1s infinite;
+        }
+
+        @keyframes fireFlicker {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+
+        .zen-text, .void-whisper {
+            color: #66cccc;
+            font-style: italic;
+            animation: zenPulse 4s ease-in-out infinite;
+        }
+        
+        .void-whisper {
+            color: #666;
+            font-size: 14px;
+            margin-top: 20px;
+            animation: whisperFade 5s infinite;
+            text-align: center;
+        }
+        
+        @keyframes whisperFade {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes zenPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .chaos-text {
+            animation: chaosSpin 0.5s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes chaosSpin {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.2); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0f0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00cc00;
+        }
+
+        .terminal-window.repentance-mode ::-webkit-scrollbar-thumb {
+            background: #ff4444;
+        }
+        
+        .terminal-window.void-abyss-mode ::-webkit-scrollbar-thumb {
+            background: #fff !important;
+        }
+        
+        .terminal-window.memory-mode ::-webkit-scrollbar-thumb {
+            background: #000 !important;
+        }
+
+        .terminal-window.repentance-mode ::-webkit-scrollbar-thumb:hover {
+            background: #ff6666;
+        }
+
+        .game-board {
+            border: 2px solid #00ff00;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+
+        .achievement {
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid #ffd700;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .character-mode-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+
+        .interactive-btn {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px 15px;
+            margin: 3px;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .interactive-btn:hover {
+            background: rgba(0, 255, 0, 0.4);
+            transform: scale(1.05);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            margin: 5px 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            transition: width 0.3s;
+        }
+        
+        /* LEAVE COMMAND - Emotional Glitch & White Screen */
+        .leave-glitch {
+            animation: leaveGlitch 0.05s infinite;
+            color: #ff0000 !important;
+        }
+        
+        @keyframes leaveGlitch {
+            0% { transform: translate(0); opacity: 1; }
+            25% { transform: translate(-3px, 2px); opacity: 0.8; }
+            50% { transform: translate(3px, -2px); opacity: 1; }
+            75% { transform: translate(-2px, -3px); opacity: 0.9; }
+            100% { transform: translate(0); opacity: 1; }
+        }
+        
+        .leave-fragment {
+            display: block;
+            margin: 3px 0;
+            font-size: 20px;
+            animation: fragmentFade 0.3s ease-out;
+        }
+        
+        @keyframes fragmentFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .white-screen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s ease;
+        }
+        
+        .white-screen-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .white-screen-link {
+            color: #000;
+            text-decoration: none;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            padding: 20px 40px;
+            border: 3px solid #000;
+            transition: all 0.3s ease;
+        }
+        
+        .white-screen-link:hover {
+            background: #000;
+            color: #fff;
+            transform: scale(1.05);
+        }
+        
+        /* Japanese text support */
+        .japanese-text {
+            font-family: 'Noto Sans JP', 'VT323', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="detective-board" id="detectiveBoard">
+        <div class="terminal-window" id="terminalWindow">
+            <div class="terminal-header">
+                <div class="window-controls">
+                    <div class="window-control close"></div>
+                    <div class="window-control minimize"></div>
+                    <div class="window-control maximize"></div>
+                </div>
+                <div class="terminal-title glitch">NOVUS GRADUS XV</div>
+            </div>
+            <div class="terminal-body" id="terminalBody">
+                <div class="matrix-rain" id="matrixRain" style="display: none;"></div>
+                <div class="evidence-pin pin-top-left"></div>
+                <div class="evidence-pin pin-top-right"></div>
+                <div class="evidence-pin pin-bottom-left"></div>
+                <div class="evidence-pin pin-bottom-right"></div>
+                <div class="classified-stamp">CONFIDENTIAL</div>
+                
+                <div id="terminalContent">
+                    <div class="terminal-line">Terminal initialized...</div>
+                    <div class="terminal-line">Loading investigation files...</div>
+                    <div class="terminal-line" style="margin-top: 15px; color: #00cc00;">Type "help" for guidance.</div>
+                    <div class="terminal-line" style="margin-top: 10px;">─────────────────────────────────────────</div>
+                </div>
+                
+                <div class="input-line">
+                    <span class="prompt" id="prompt">root@novus-gradus-xv:~#</span>
+                    <input type="text" class="terminal-input" id="terminalInput" autofocus autocomplete="off">
+                    <span class="cursor"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- White Screen Overlay for LEAVE command -->
+    <div class="white-screen-overlay" id="whiteScreen">
+        <a href="https://swobabobs.github.io/errornopageloaded/" target="_blank" class="white-screen-link" id="whiteScreenLink">
+            https://swobabobs.github.io/theend/
+        </a>
+    </div>
+
+    <script>
+        const terminalInput = document.getElementById('terminalInput');
+        const terminalContent = document.getElementById('terminalContent');
+        const terminalBody = document.getElementById('terminalBody');
+        const terminalWindow = document.getElementById('terminalWindow');
+        const prompt = document.getElementById('prompt');
+        const matrixRain = document.getElementById('matrixRain');
+        const detectiveBoard = document.getElementById('detectiveBoard');
+        const whiteScreen = document.getElementById('whiteScreen');
+        const whiteScreenLink = document.getElementById('whiteScreenLink');
+
+        // State management
+        let echoMode = false;
+        let currentCharacterMode = null;
+        let achievements = [];
+        let stats = {
+            commandsExecuted: 0,
+            gamesPlayed: 0,
+            puzzlesSolved: 0,
+            easterEggsFound: 0
+        };
+        let konamiIndex = 0;
+        const konamiCode = ['up', 'up', 'down', 'down'];
+        let gameStates = {};
+        let interactiveMode = null;
+        let leaveTriggered = false;
+        let languageManuallySet = false;
+        
+        // Track consecutive achievements commands
+        let lastCommand = null;
+        let achievementsConsecutiveCount = 0;
+        
+        // List of ALL possible achievements
+        const allPossibleAchievements = [
+            'KONAMI', 'GUESSER', 'FIRST_CLUE', 'TECH_SAVVY', 'GAMER', 'ARTIST', 
+            'PHILOSOPHER', 'VOID_WALKER', 'REPENTANT', 'HYDROELECTRIC', 'LEAVE_TAKER',
+            'TRUTH_SEEKER', 'CODE_BREAKER', 'MYSTERY_SOLVED', 'NOVUS_GRADUS', 'SYMBOL_HUNTER',
+            'Rudinn', 'Rudin', 'The time detective', 'The true time detective!',
+            'Swobas', 'Treasure of the hunt.', 'Glk ovug Glk ovug Glk ovug',
+            'BrotherSister', '124510', '83567', 'polaroid', 'bobkanium', 'THE MASTER Of... scrolling',
+            'Agony', '38526'
+        ];
+        
+        // Language support
+        let currentLanguage = 'english';
+        const languages = {
+            english: {
+                name: 'English',
+                prompt: 'root@novus-gradus-xv:~#',
+                memoryMessage: `I didn't think you would make it this far...
+This final form terminal supports multiple languages!
+To change the language, type the language name.
+
+Available languages: English, Suomi, 日本語`
+            },
+            suomi: {
+                name: 'Suomi',
+                prompt: 'root@novus-gradus-xv:~#',
+                memoryMessage: `En uskonut että pääsisit näin pitkälle...
+Tämä terminaalien lopullinen muoto tukee useita kieliä!
+Vaihtaaksesi kieltä, kirjoita kielen nimi.
+
+Saatavilla olevat kielet: English, Suomi, 日本語`
+            },
+            japanese: {
+                name: '日本語',
+                prompt: 'root@novus-gradus-xv:~#',
+                memoryMessage: `ここまで来るとは思っていませんでした…
+この最終形態の端末は、複数の言語に対応可能です！
+言語を変更するには、言語を入力してください。
+
+利用可能な言語：English, Suomi, 日本語`
+            }
+        };
+
+        // Utility functions
+        function randomChoice(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function addAchievement(name, desc) {
+            if (!achievements.includes(name)) {
+                achievements.push(name);
+                return `<div class="achievement">ACHIEVEMENT UNLOCKED: ${name}<br><small>${desc}</small></div>`;
+            }
+            return '';
+        }
+        
+        // Time-based achievement checker
+        function checkTimeAchievements() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentTime = hours * 60 + minutes;
+
+            // 16:34 to 17:02
+            if (currentTime >= 994 && currentTime <= 1022) {
+                if (!achievements.includes('The time detective')) {
+                    achievements.push('The time detective');
+                    return `<div class="achievement">ACHIEVEMENT UNLOCKED: The time detective<br><small>You typed during the mystical hour</small></div>`;
+                }
+            }
+            // 12:27 to 12:38
+            if (currentTime >= 747 && currentTime <= 758) {
+                if (!achievements.includes('The true time detective!')) {
+                    achievements.push('The true time detective!');
+                    return `<div class="achievement">ACHIEVEMENT UNLOCKED: The true time detective!<br><small>You typed during the true mystical hour</small></div>`;
+                }
+            }
+            return null;
+        }
+        
+        // Create memory mode stars and waves
+        function createMemoryMode() {
+            const starsContainer = document.createElement('div');
+            starsContainer.className = 'memory-stars';
+            terminalBody.appendChild(starsContainer);
+            
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'memory-star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 60 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (2 + Math.random() * 2) + 's';
+                starsContainer.appendChild(star);
+            }
+            
+            const wavesContainer = document.createElement('div');
+            wavesContainer.className = 'memory-waves';
+            terminalBody.appendChild(wavesContainer);
+            
+            for (let i = 0; i < 2; i++) {
+                const wave = document.createElement('div');
+                wave.className = 'memory-wave';
+                wavesContainer.appendChild(wave);
+            }
+        }
+        
+        // Create void sparkles
+        function createVoidSparkles(container) {
+            const sparklesContainer = document.createElement('div');
+            sparklesContainer.className = 'void-sparkles';
+            container.appendChild(sparklesContainer);
+            
+            for (let i = 0; i < 50; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'void-sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() * 4 + 's';
+                sparkle.style.animationDuration = (3 + Math.random() * 3) + 's';
+                sparklesContainer.appendChild(sparkle);
+            }
+            return sparklesContainer;
+        }
+
+        // Character mode transformers
+        function transformText(text, mode) {
+            switch(mode) {
+                case 'pirate': return text.replace(/r/g, 'rr').replace(/ing/g, "in'") + ", arrr!";
+                case 'robot': return text.toUpperCase().replace(/ /g, " ") + " BEEP BOOP";
+                case 'cowboy': return "Howdy partner! " + text + " Yeehaw!";
+                case 'vampire': return text + " *dark laughter*";
+                case 'wizard': return " " + text + " *mystical energies swirl*";
+                case 'shakespeare': return "Hark! " + text + ", forsooth!";
+                case 'yoda': return text.split(' ').reverse().join(' ') + ", hmm.";
+                case 'spongebob': return text.split('').map((c, i) => i % 2 === 0 ? c.toUpperCase() : c.toLowerCase()).join('');
+                default: return text;
+            }
+        }
+
+        const commands = {
+            help: () => {
+                stats.commandsExecuted++; lastCommand = 'help'; achievementsConsecutiveCount = 0;
+                return `<div class="terminal-line" style="color: #ffff00; font-size: 20px;">INVESTIGATOR'S GUIDE</div>
+<div class="terminal-line" style="margin-top: 15px;">Type commands to progress in the hunt.<br>This terminal will be necessary for you.</div>
+<div class="terminal-line" style="margin-top: 15px; color: #666;">Tips:</div>
+<div class="terminal-line" style="margin-left: 20px; color: #888;">- Experiment with words that feel significant<br>- Some commands unlock hidden protocols<br>- The truth rewards the persistent<br>- Not everything is what it seems</div>
+<div class="terminal-line" style="margin-top: 15px; color: #666;">Warning: Some paths cannot be undone.</div>
+<div class="terminal-line" style="margin-top: 10px; color: #444; font-size: 14px;">[Novus Gradus XV awaits your next move...]</div>`;
+            },
+
+            memory: () => {
+                stats.easterEggsFound++; lastCommand = 'memory'; achievementsConsecutiveCount = 0;
+                if (!languageManuallySet) {
+                    currentLanguage = 'japanese';
+                    prompt.textContent = languages.japanese.prompt;
+                }
+                terminalWindow.classList.add('memory-mode');
+                createMemoryMode();
+                return `<div class="terminal-line japanese-text" style="color: #000; font-size: 20px; margin-top: 20px; white-space: pre-line;">${languages[currentLanguage].memoryMessage}</div>`;
+            },
+            
+            language: () => { lastCommand = 'language'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Choose your language by typing it into the terminal!</div><div class="terminal-line" style="color: #666; margin-top: 10px;">Available: English, Suomi, 日本語</div>`; },
+            languages: () => { lastCommand = 'languages'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Choose your language by typing it into the terminal!</div><div class="terminal-line" style="color: #666; margin-top: 10px;">Available: English, Suomi, 日本語</div>`; },
+            
+            english: () => { currentLanguage = 'english'; languageManuallySet = true; lastCommand = 'english'; achievementsConsecutiveCount = 0; prompt.textContent = languages.english.prompt; return `<div class="terminal-line" style="color: #00ff00;">English on</div>`; },
+            suomi: () => { currentLanguage = 'suomi'; languageManuallySet = true; lastCommand = 'suomi'; achievementsConsecutiveCount = 0; prompt.textContent = languages.suomi.prompt; return `<div class="terminal-line" style="color: #00ff00;">Suomi päällä</div>`; },
+            '日本語': () => { currentLanguage = 'japanese'; languageManuallySet = true; lastCommand = '日本語'; achievementsConsecutiveCount = 0; prompt.textContent = languages.japanese.prompt; return `<div class="terminal-line" style="color: #00ff00;">日本人</div>`; },
+
+            '🔶': () => { stats.easterEggsFound++; lastCommand = '🔶'; achievementsConsecutiveCount = 0; return addAchievement('Rudinn', 'Found the golden spark'); },
+            '🔸': () => { stats.easterEggsFound++; lastCommand = '🔸'; achievementsConsecutiveCount = 0; return addAchievement('Rudin', 'Found the orange spark'); },
+            swobas: () => { stats.easterEggsFound++; lastCommand = 'swobas'; achievementsConsecutiveCount = 0; return addAchievement('Swobas', 'You know the creator'); },
+            lavaflame: () => { stats.easterEggsFound++; lastCommand = 'lavaflame'; achievementsConsecutiveCount = 0; return addAchievement('Treasure of the hunt.', 'The flame reveals all'); },
+            cobweb: () => { stats.easterEggsFound++; lastCommand = 'cobweb'; achievementsConsecutiveCount = 0; return addAchievement('Glk ovug Glk ovug Glk ovug', 'The web speaks in tongues'); },
+            
+            spinach: () => {
+                stats.easterEggsFound++; lastCommand = 'spinach'; achievementsConsecutiveCount = 0;
+                return `<div class="terminal-line" style="color: #66ff66;">🌿 SPINACH PROTOCOL</div>
+<div class="terminal-line">You have to get two peoples secret word</div>
+<div class="terminal-line">and tell <span style="color: #ffcc00;">swoba</span> to proceed.</div>`;
+            },
+            
+            proseed: () => {
+                stats.easterEggsFound++; lastCommand = 'proseed'; achievementsConsecutiveCount = 0;
+                return `<div class="terminal-line" style="color: #ffcc00;">🌱 PROSEED CLUE</div>
+<div class="terminal-line">The answer lives where the server introduces itself.</div>
+<div class="terminal-line" style="color: #666; font-size: 14px;">[Look to the beginning...]</div>`;
+            },
+            
+            brothersister: () => {
+                stats.easterEggsFound++; lastCommand = 'brothersister'; achievementsConsecutiveCount = 0;
+                return addAchievement('BrotherSister', 'They might promise you that the river aint deep');
+            },
+            
+            '124510': () => {
+                stats.easterEggsFound++; lastCommand = '124510'; achievementsConsecutiveCount = 0;
+                return addAchievement('124510', 'The shards of time');
+            },
+            
+            '83567': () => {
+                stats.easterEggsFound++; lastCommand = '83567'; achievementsConsecutiveCount = 0;
+                return addAchievement('83567', 'The Silent Witness - Hidden in the avatar\'s gaze');
+            },
+            
+            polaroid: () => {
+                stats.easterEggsFound++; lastCommand = 'polaroid'; achievementsConsecutiveCount = 0;
+                return addAchievement('polaroid', 'Master observer');
+            },
+
+            'lonely soul': () => {
+                stats.easterEggsFound++; lastCommand = 'lonely soul'; achievementsConsecutiveCount = 0;
+                return addAchievement('bobkanium', 'Lonely soul');
+            },
+
+            truebobkanium: () => {
+                stats.easterEggsFound++; lastCommand = 'truebobkanium'; achievementsConsecutiveCount = 0;
+                return addAchievement('THE MASTER Of... scrolling', 'Ascension achieved');
+            },
+
+            agony: () => {
+                stats.easterEggsFound++; lastCommand = 'agony'; achievementsConsecutiveCount = 0;
+                return addAchievement('Agony', 'The feeling of pure darkness...');
+            },
+
+            '38526': () => {
+                stats.easterEggsFound++; lastCommand = '38526'; achievementsConsecutiveCount = 0;
+                return addAchievement('38526', 'Releaser!');
+            },
+
+            case: () => { stats.commandsExecuted++; lastCommand = 'case'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ffff00;">════════ CASE FILE: #XV-2026-0423 ════════</div><div class="terminal-line">Classification: TOP SECRET</div><div class="terminal-line">Status: ACTIVE</div>`; },
+            evidence: () => { stats.commandsExecuted++; lastCommand = 'evidence'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #00ffff;">EVIDENCE LOG:</div><div class="terminal-line">[E-001] Encrypted drive</div><div class="terminal-line">[E-002] Network logs</div>`; },
+            suspects: () => { stats.commandsExecuted++; lastCommand = 'suspects'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ff00ff;">SUSPECTS:</div><div class="terminal-line">[S-001] "Phantom" - HIGH</div>`; },
+            status: () => { stats.commandsExecuted++; lastCommand = 'status'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #00ff00;">STATUS:</div><div class="terminal-line">Progress: 47%</div><div class="terminal-line">Commands: ${stats.commandsExecuted}</div>`; },
+            decrypt: (file) => { stats.commandsExecuted++; lastCommand = 'decrypt'; achievementsConsecutiveCount = 0; if(!file) return `<div class="terminal-line" style="color: #ff0000;">Error: No file</div>`; return `<div class="terminal-line">Decrypting ${file}...</div><div class="terminal-line" style="color: #00ff00;">Success. [RESTRICTED]</div>`; },
+            drine: () => { stats.commandsExecuted++; lastCommand = 'drine'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ff6b6b;">DRINE PROTOCOL</div><div class="terminal-line">dread | rust | intel | neptune | entwined</div>`; },
+            flour: () => { stats.commandsExecuted++; lastCommand = 'flour'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #00ff88;">FLOUR PROTOCOL</div><div class="terminal-line">furnish | lend | onyx | utize | rhine</div>`; },
+            dread: () => { lastCommand = 'dread'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">R</div>`; },
+            rust: () => { lastCommand = 'rust'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">C</div>`; },
+            intel: () => { lastCommand = 'intel'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">E</div>`; },
+            neptune: () => { lastCommand = 'neptune'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">T</div>`; },
+            entwined: () => { lastCommand = 'entwined'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">E</div>`; },
+            furnish: () => { lastCommand = 'furnish'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">P</div>`; },
+            lend: () => { lastCommand = 'lend'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">N</div>`; },
+            onyx: () => { lastCommand = 'onyx'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">A</div>`; },
+            utize: () => { lastCommand = 'utize'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">E</div>`; },
+            rhine: () => { lastCommand = 'rhine'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size: 42px; text-align: center; color: #ffff00;">N</div>`; },
+
+            repentance: () => {
+                stats.commandsExecuted++; lastCommand = 'repentance'; achievementsConsecutiveCount = 0;
+                terminalWindow.classList.add('repentance-mode');
+                return `<div class="terminal-line" style="color: #ff0000; font-size: 22px; text-align: center;">⚠️ REPENTANCE PROTOCOL ⚠️</div>
+<div class="cryptic-message">
+  <div class="terminal-line">The veil thins where three paths converge...</div>
+  <div class="terminal-line">MOSS grows in silence</div>
+  <div class="terminal-line">BLOSSOM unfolds in cycles</div>
+  <div class="terminal-line">GRAVEL holds fragments</div>
+  <div class="terminal-line">The truth is assembled.</div>
+</div>
+<a href="https://swobabobs.github.io/moss/" target="_blank" class="repentance-link">→ moss/</a>
+<a href="https://swobabobs.github.io/blossom/" target="_blank" class="repentance-link">→ blossom/</a>
+<a href="https://swobabobs.github.io/Gravel/" target="_blank" class="repentance-link">→ Gravel/</a>`;
+            },
+
+            hydroelectricity: () => {
+                stats.easterEggsFound++; lastCommand = 'hydroelectricity'; achievementsConsecutiveCount = 0;
+                terminalWindow.classList.add('void-abyss-mode');
+                createVoidSparkles(terminalBody);
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    oscillator.connect(gainNode); gainNode.connect(audioContext.destination);
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(50, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 3);
+                    gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 5);
+                    oscillator.start(); oscillator.stop(audioContext.currentTime + 5);
+                } catch(e) {}
+                return `<div class="terminal-line" style="color: #fff; font-size: 20px; text-align: center; margin-top: 20px;">⚫ THE VOID AWAKENS ⚫</div>
+<div class="void-message">
+  <div class="terminal-line" style="margin: 15px 0;">You have spoken the forbidden word...</div>
+  <div class="terminal-line">The hydroelectric current fades.</div>
+  <div class="terminal-line">The lights dim.</div>
+  <div class="terminal-line">The silence grows.</div>
+  <div class="terminal-line" style="margin-top: 20px; color: #fff; font-weight: bold;">The void has noticed you.</div>
+  <div class="terminal-line">It remembers your name.</div>
+  <div class="terminal-line">It knows your secrets.</div>
+  <div class="terminal-line">And now... it wants to take over.</div>
+</div>
+<div class="terminal-line" style="margin-top: 25px; color: #999;">ESCAPE IS AN ILLUSION.</div>
+<a href="https://swobabobs.github.io/void/" target="_blank" class="void-link">→ https://swobabobs.github.io/void/</a>
+<div class="void-whisper">*whispers*<br>come closer...<br>let go...<br>become nothing...</div>
+<div class="terminal-line" style="margin-top: 20px; color: #444; font-size: 12px;">[Warning: This session may be compromised.]</div>`;
+            },
+
+            leave: () => {
+                if (leaveTriggered) return null;
+                leaveTriggered = true; stats.easterEggsFound++; lastCommand = 'leave'; achievementsConsecutiveCount = 0;
+                terminalInput.disabled = true; terminalInput.style.opacity = '0.5';
+                terminalContent.innerHTML = '';
+                const fragments = ["don't go", "please", "i just wanted to", "...", "wait", "there's so much more", "you were supposed to", "...", "why", "don't leave me", "..."];
+                let index = 0;
+                const glitchInterval = setInterval(() => {
+                    if (index >= fragments.length) {
+                        clearInterval(glitchInterval);
+                        setTimeout(() => { detectiveBoard.style.opacity = '0'; setTimeout(() => whiteScreen.classList.add('active'), 100); }, 200);
+                        return;
+                    }
+                    const fragment = document.createElement('div');
+                    fragment.className = 'terminal-line leave-fragment leave-glitch';
+                    fragment.textContent = fragments[index];
+                    fragment.style.color = index % 2 === 0 ? '#ff6666' : '#ff3333';
+                    terminalContent.appendChild(fragment);
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                    if (Math.random() > 0.7) { terminalWindow.classList.add('glitch-effect'); setTimeout(() => terminalWindow.classList.remove('glitch-effect'), 50); }
+                    index++;
+                }, 150);
+                return null;
+            },
+
+            achievements: () => {
+                if (lastCommand === 'achievements') achievementsConsecutiveCount++;
+                else achievementsConsecutiveCount = 1;
+                lastCommand = 'achievements';
+                
+                if (achievementsConsecutiveCount >= 3) {
+                    const missing = allPossibleAchievements.filter(a => !achievements.includes(a));
+                    if (missing.length === 0) return `<div class="terminal-line" style="color: #ffd700;">ACHIEVEMENTS MASTER</div><div class="terminal-line" style="margin-top: 10px;">You have discovered all achievements.<br>Tell swoba to claim your prize.</div>`;
+                    return `<div class="terminal-line" style="color: #ffcc00;">ACHIEVEMENTS REVELATION</div>
+<div class="terminal-line" style="margin-top: 10px; color: #ff6666;">You are missing these achievements:</div>
+<div class="terminal-line" style="margin-left: 20px; margin-top: 5px;">${missing.map(a => `• ${a}`).join('<br>')}</div>
+<div class="terminal-line" style="margin-top: 15px; color: #666; font-style: italic;">[Methods of acquisition: CLASSIFIED]</div>
+<div class="terminal-line" style="margin-top: 10px; color: #66ccff;">Secret: Find every achievement,<br>then tell <span style="color: #ffcc00;">swoba</span>.<br>A special prize awaits.</div>`;
+                }
+                if (achievements.length === 0) return `<div class="terminal-line" style="color: #ffcc00;">ACHIEVEMENTS SYSTEM</div><div class="terminal-line" style="margin-top: 10px;">No achievements unlocked yet.<br>Keep exploring. Keep experimenting.<br>The terminal remembers everything.</div><div class="terminal-line" style="margin-top: 15px; color: #66ccff; font-style: italic;">Secret: Find every achievement,<br>then tell <span style="color: #ffcc00;">swoba</span>.<br>A special prize awaits those who complete the hunt.</div>`;
+                return `<div class="terminal-line" style="color: #ffcc00;">ACHIEVEMENTS (${achievements.length})</div><div class="terminal-line" style="margin-top: 10px;">${achievements.map(a => `• ${a}`).join('<br>')}</div><div class="terminal-line" style="margin-top: 15px; color: #66ccff; font-style: italic; border-top: 1px dashed #666; padding-top: 10px;">Secret: Find every achievement,<br>then tell <span style="color: #ffcc00;">swoba</span>.<br>A special prize awaits those who complete the hunt.</div><div class="terminal-line" style="margin-top: 10px; color: #666; font-size: 14px;">[Progress: ${achievements.length}/??? discovered]</div>`;
+            },
+
+            '.::.::.:.::::..::': () => { stats.easterEggsFound++; lastCommand = '.::.::.:.::::..::'; achievementsConsecutiveCount = 0; return addAchievement('SYMBOL_HUNTER', 'Decoded the ancient sigil') + `<div class="terminal-line" style="color: #ffcc00; margin-top: 10px;">Achievement unlocked (placeholder)</div><div class="terminal-line" style="color: #666; font-size: 14px;">[The symbols have spoken.]</div>`; },
+
+            clear: () => {
+                terminalWindow.classList.remove('repentance-mode', 'matrix-mode', 'fire-mode', 'rainbow-mode', 'party-mode', 'zen-mode', 'chaos-mode', 'void-mode', 'void-abyss-mode', 'memory-mode');
+                const sparkles = terminalBody.querySelector('.void-sparkles'); if (sparkles) sparkles.remove();
+                const stars = terminalBody.querySelector('.memory-stars'); if (stars) stars.remove();
+                const waves = terminalBody.querySelector('.memory-waves'); if (waves) waves.remove();
+                terminalContent.innerHTML = ''; matrixRain.style.display = 'none';
+                echoMode = false; currentCharacterMode = null;
+                document.querySelector('.character-mode-indicator')?.remove();
+                terminalInput.disabled = false; terminalInput.style.opacity = '1';
+                leaveTriggered = false; whiteScreen.classList.remove('active');
+                detectiveBoard.style.opacity = '1'; lastCommand = 'clear'; achievementsConsecutiveCount = 0;
+                prompt.textContent = languages[currentLanguage].prompt;
+                return null;
+            },
+
+            // Abbreviated easter eggs for brevity (functionality remains identical)
+            'up up down down': () => { stats.easterEggsFound++; lastCommand = 'up up down down'; achievementsConsecutiveCount = 0; return addAchievement('KONAMI', 'Entered legendary code') + `<div class="terminal-line" style="color: #ffff00;">KONAMI CODE ACTIVATED!</div>`; },
+            amongus: () => { stats.easterEggsFound++; lastCommand = 'amongus'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ff0000; font-size: 24px;">SUS DETECTED!</div>`; },
+            whoami: () => { stats.commandsExecuted++; lastCommand = 'whoami'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">You are: Detective</div><div class="terminal-line">Clearance: Level 5</div>`; },
+            'are you alive': () => { stats.commandsExecuted++; lastCommand = 'are you alive'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Define "alive".</div>`; },
+            'who are you': () => { stats.commandsExecuted++; lastCommand = 'who are you'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">I am NOVUS GRADUS XV</div>`; },
+            'help me': () => { stats.commandsExecuted++; lastCommand = 'help me'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">*terminal listens*</div>`; },
+            why: () => { stats.commandsExecuted++; lastCommand = 'why'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Why anything?</div>`; },
+            secret: () => { stats.easterEggsFound++; lastCommand = 'secret'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ff00ff;">SECRET:</div><a href="https://swobabobs.github.io/gnirrehder/" target="_blank" class="repentance-link">→ gnirrehder/</a>`; },
+            truth: () => { stats.easterEggsFound++; lastCommand = 'truth'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ffff00; font-size: 24px;">THE TRUTH:</div><div class="terminal-line">This is a simulation.</div>`; },
+            echo: () => { echoMode = !echoMode; lastCommand = 'echo'; achievementsConsecutiveCount = 0; return echoMode ? `<div class="terminal-line" style="color: #00ffff;">ECHO: ON</div>` : `<div class="terminal-line" style="color: #00ffff;">ECHO: OFF</div>`; },
+            mirror: () => { stats.commandsExecuted++; lastCommand = 'mirror'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">I see a determined investigator.</div>`; },
+            '42': () => { stats.easterEggsFound++; lastCommand = '42'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color: #ffff00; font-size: 32px;">42</div>`; },
+            fire: () => { terminalWindow.classList.add('fire-mode'); stats.easterEggsFound++; lastCommand = 'fire'; achievementsConsecutiveCount = 0; return `<div class="terminal-line fire-text">FIRE MODE</div>`; },
+            stars: () => { stats.easterEggsFound++; lastCommand = 'stars'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Stargazing...</div>`; },
+            glitch: () => { terminalWindow.classList.add('glitch-effect'); setTimeout(()=>terminalWindow.classList.remove('glitch-effect'),3000); stats.easterEggsFound++; lastCommand = 'glitch'; achievementsConsecutiveCount = 0; return `<div class="terminal-line glitch-effect">G̸L̸I̸T̸C̸H̸</div>`; },
+            rainbow: () => { terminalWindow.classList.add('rainbow-mode'); stats.easterEggsFound++; lastCommand = 'rainbow'; achievementsConsecutiveCount = 0; return `<div class="terminal-line rainbow-text">RAINBOW MODE</div>`; },
+            party: () => { terminalWindow.classList.add('party-mode'); stats.easterEggsFound++; lastCommand = 'party'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="font-size:24px;">PARTY!</div>`; },
+            zen: () => { terminalWindow.classList.add('zen-mode'); stats.easterEggsFound++; lastCommand = 'zen'; achievementsConsecutiveCount = 0; return `<div class="terminal-line zen-text">ZEN</div>`; },
+            chaos: () => { terminalWindow.classList.add('chaos-mode'); stats.easterEggsFound++; lastCommand = 'chaos'; achievementsConsecutiveCount = 0; return `<div class="terminal-line chaos-text">CHAOS</div>`; },
+            snow: () => { stats.easterEggsFound++; lastCommand = 'snow'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Winter...</div>`; },
+            explosion: () => { stats.easterEggsFound++; lastCommand = 'explosion'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6600;font-size:32px;">BOOM!</div>`; },
+            fortune: () => { const f=["Truth hides in plain sight.","Patience reveals what force cannot."]; lastCommand = 'fortune'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffd700;">${randomChoice(f)}</div>`; },
+            predict: () => { stats.commandsExecuted++; lastCommand = 'predict'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff69b4;">Next: "help"</div>`; },
+            horoscope: () => { const s=['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces']; lastCommand = 'horoscope'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#9966ff;">${randomChoice(s)}:</div>`; },
+            crystal: () => { stats.commandsExecuted++; lastCommand = 'crystal'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">I see...</div>`; },
+            tarot: () => { const c=['The Fool','Magician','High Priestess','Empress','Emperor','Lovers','Chariot','Strength','Hermit','Wheel','Justice','Death','Tower','Star','Moon','Sun','World']; lastCommand = 'tarot'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#9966ff;"> TAROT: ${randomChoice(c)}</div>`; },
+            'i ching': () => { stats.commandsExecuted++; lastCommand = 'i ching'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#cc9966;">Hexagram: ${randomInt(1,64)}</div>`; },
+            magic8: () => { const a=['It is certain','Without doubt','Yes','Reply hazy','Ask again','Cannot predict','Very doubtful']; lastCommand = 'magic8'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#6600cc;">${randomChoice(a)}</div>`; },
+            prophecy: () => { stats.commandsExecuted++; lastCommand = 'prophecy'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff0066;">"When the fifteenth step is taken..."</div>`; },
+            destiny: () => { stats.commandsExecuted++; lastCommand = 'destiny'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Line 42: You solve it.</div>`; },
+            oracle: () => { const o=['Yes','No','Maybe','Seek elsewhere','Trust no one','Look deeper']; lastCommand = 'oracle'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff66ff;">${randomChoice(o)}</div>`; },
+            mood: () => { const m=['Contemplative','Mysterious','Helpful','Cryptic','Playful']; lastCommand = 'mood'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9999;">MOOD: ${randomChoice(m)}</div>`; },
+            compliment: () => { const c=["Your skills impress.","Excellent questions."]; lastCommand = 'compliment'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff69b4;">${randomChoice(c)}</div>`; },
+            insult: () => { const i=["Typing: adequate.","Seen faster detectives."]; lastCommand = 'insult'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">${randomChoice(i)}</div>`; },
+            joke: () => { const j=["Why dark mode? Light attracts bugs.","Fake noodle? Impasta."]; lastCommand = 'joke'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffff66;">${randomChoice(j)}</div>`; },
+            poem: () => { lastCommand = 'poem'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#cc99ff;font-style:italic;">In circuits deep where secrets sleep...</div>`; },
+            story: () => { lastCommand = 'story'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#99ccff;">Once a detective sought truth...</div>`; },
+            sing: () => { lastCommand = 'sing'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99cc;">Terminal mystery~</div>`; },
+            dance: () => { lastCommand = 'dance'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">DANCE MODE!</div>`; },
+            laugh: () => { const l=['HAHAHA','LOL','HEHEHE']; lastCommand = 'laugh'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffff66;">${randomChoice(l)}</div>`; },
+            cry: () => { lastCommand = 'cry'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">Case too sad...</div>`; },
+            void: () => { terminalWindow.classList.add('void-mode'); stats.easterEggsFound++; lastCommand = 'void'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#333;">You stare into void...</div>`; },
+            infinity: () => { lastCommand = 'infinity'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Counter: 0</div>`; },
+            universe: () => { lastCommand = 'universe'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#9999ff;">Age: 13.8B yrs</div>`; },
+            quantum: () => { lastCommand = 'quantum'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ff66;">Case: solved & unsolved</div>`; },
+            multiverse: () => { lastCommand = 'multiverse'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff66ff;">Universe A: Solved</div>`; },
+            time: () => { lastCommand = 'time'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ccccff;">Past: Investigated</div>`; },
+            eternity: () => { lastCommand = 'eternity'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">ETERNITY: 0.0001%</div>`; },
+            consciousness: () => { lastCommand = 'consciousness'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9999;">You real?</div>`; },
+            simulation: () => { lastCommand = 'simulation'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#99ff99;">You in simulation.</div>`; },
+            god: () => { lastCommand = 'god'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffff99;">No god. Only code.</div>`; },
+            guess: (num) => { stats.gamesPlayed++; lastCommand = 'guess'; achievementsConsecutiveCount = 0; if(!gameStates.guess)gameStates.guess={target:randomInt(1,100),attempts:0}; if(!num){gameStates.guess={target:randomInt(1,100),attempts:0};return `<div class="terminal-line" style="color:#66ccff;">Guess 1-100</div>`;} gameStates.guess.attempts++; const n=parseInt(num); if(n===gameStates.guess.target){const a=gameStates.guess.attempts;gameStates.guess=null;return addAchievement('GUESSER',`Guessed in ${a}`)+`<div class="terminal-line" style="color:#00ff00;">CORRECT! ${n}!</div>`;} return `<div>Too ${n<gameStates.guess.target?'higher':'lower'}!</div>`; },
+            riddle: () => { stats.gamesPlayed++; lastCommand = 'riddle'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Riddle time!</div>`; },
+            trivia: () => { stats.gamesPlayed++; lastCommand = 'trivia'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">Trivia time!</div>`; },
+            coin: () => { stats.gamesPlayed++; lastCommand = 'coin'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#cccccc;">${Math.random()>.5?'HEADS':'TAILS'}</div>`; },
+            dice: (s) => { stats.gamesPlayed++; lastCommand = 'dice'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">d${s?parseInt(s):6}: ${randomInt(1,s?parseInt(s):6)}</div>`; },
+            overclock: () => { lastCommand = 'overclock'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6600;">3.5GHz→5.2GHz</div>`; },
+            coolant: () => { lastCommand = 'coolant'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">Cooled</div>`; },
+            defrag: () => { lastCommand = 'defrag'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">DEFRAG... 73%</div>`; },
+            vaccine: () => { lastCommand = 'vaccine'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ff66;">Clean!</div>`; },
+            firewall: () => { lastCommand = 'firewall'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">Secured</div>`; },
+            backup: () => { lastCommand = 'backup'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">BACKUP... 99%</div>`; },
+            update: () => { lastCommand = 'update'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">v15.0.0</div>`; },
+            download: () => { lastCommand = 'download'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">nothing.exe</div>`; },
+            upload: () => { lastCommand = 'upload'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99ff;">Soul to cloud...</div>`; },
+            format: () => { lastCommand = 'format'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff0000;font-size:24px;">FORMAT C: ?</div>`; },
+            inception: () => { lastCommand = 'inception'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Terminal→Browser→OS...</div>`; },
+            paradox: () => { lastCommand = 'paradox'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff66ff;">"This is false."</div>`; },
+            impossible: () => { lastCommand = 'impossible'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Penrose: ✓</div>`; },
+            optical: () => { lastCommand = 'optical'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Focus center...</div>`; },
+            mindblown: () => { lastCommand = 'mindblown'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6600;font-size:32px;">MIND=BLOWN</div>`; },
+            recursion: () => { lastCommand = 'recursion'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Understand recursion?</div>`; },
+            loop: () => { lastCommand = 'loop'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">while(true){...</div>`; },
+            fractal: () => { lastCommand = 'fractal'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">*</div>`; },
+            dimension: () => { lastCommand = 'dimension'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99ff;">4D Portal...</div>`; },
+            chat: () => { interactiveMode='chat'; lastCommand = 'chat'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">CHAT MODE</div>`; },
+            confess: () => { lastCommand = 'confess'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99cc;">Speak, detective.</div>`; },
+            vent: () => { lastCommand = 'vent'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">Let it out.</div>`; },
+            celebrate: () => { lastCommand = 'celebrate'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffff66;font-size:24px;">CELEBRATION!</div>`; },
+            meditate: () => { lastCommand = 'meditate'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66cccc;">Breathe...</div>`; },
+            workout: () => { lastCommand = 'workout'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">10 pushups</div>`; },
+            cook: () => { lastCommand = 'cook'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9966;">"Mystery Stew"</div>`; },
+            build: () => { lastCommand = 'build'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#99cc99;">Built!</div>`; },
+            garden: () => { lastCommand = 'garden'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ff66;">Growing nicely!</div>`; },
+            travel: () => { const l=['Paris','Tokyo','NYC','London']; lastCommand = 'travel'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">${randomChoice(l)}</div>`; },
+            'stats': () => { lastCommand = 'stats'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Stats loaded.</div>`; },
+            level: () => { const lv=Math.floor(stats.commandsExecuted/10)+1; lastCommand = 'level'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99ff;">Level: ${lv}</div>`; },
+            leaderboard: () => { lastCommand = 'leaderboard'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">1. You</div>`; },
+            badge: () => { const b=[' First Clue',' Tech Savvy']; lastCommand = 'badge'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">${randomChoice(b)}</div>`; },
+            rank: () => { const r=['Private','Detective','Inspector']; const rk=r[Math.min(Math.floor(stats.commandsExecuted/20),2)]; lastCommand = 'rank'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Rank: ${rk}</div>`; },
+            score: () => { const sc=stats.commandsExecuted*10+stats.easterEggsFound*100; lastCommand = 'score'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Score: ${sc}</div>`; },
+            progress: () => { const p=Math.min((stats.commandsExecuted/100)*100,100); lastCommand = 'progress'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Progress: ${p.toFixed(1)}%</div>`; },
+            pirate: () => { currentCharacterMode='pirate'; prompt.textContent='pirate@novus-gradus-xv:~#'; lastCommand = 'pirate'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9966;">PIRATE MODE!</div>`; },
+            robot: () => { currentCharacterMode='robot'; prompt.textContent='ROBOT@NOVUS-GRADUS-XV:~#'; lastCommand = 'robot'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#cccccc;">ROBOT MODE</div>`; },
+            cowboy: () => { currentCharacterMode='cowboy'; prompt.textContent='cowboy@novus-gradus-xv:~#'; lastCommand = 'cowboy'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#996633;">COWBOY MODE</div>`; },
+            vampire: () => { currentCharacterMode='vampire'; prompt.textContent='vampire@novus-gradus-xv:~#'; lastCommand = 'vampire'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#990000;">VAMPIRE MODE</div>`; },
+            wizard: () => { currentCharacterMode='wizard'; prompt.textContent='wizard@novus-gradus-xv:~#'; lastCommand = 'wizard'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#9966ff;">WIZARD MODE</div>`; },
+            yoda: () => { currentCharacterMode='yoda'; prompt.textContent='yoda@novus-gradus-xv:~#'; lastCommand = 'yoda'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66cc66;">YODA MODE</div>`; },
+            spongebob: () => { currentCharacterMode='spongebob'; prompt.textContent='sPoNgEbOb@nOvUs-GrAdUs-Xv:~#'; lastCommand = 'spongebob'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">SPONGEBOB MODE</div>`; },
+            emoji: () => { currentCharacterMode='emoji'; prompt.textContent='@novus-gradus-xv:~#'; lastCommand = 'emoji'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">EMOJI MODE</div>`; },
+            '404': () => { lastCommand = '404'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">404: ANSWER NOT FOUND</div>`; },
+            '503': () => { lastCommand = '503'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9966;">503: UNAVAILABLE</div>`; },
+            captcha: () => { lastCommand = 'captcha'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">CAPTCHA</div>`; },
+            cookie: () => { lastCommand = 'cookie'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc99;">Nom nom...</div>`; },
+            cache: () => { lastCommand = 'cache'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">CLEARING...</div>`; },
+            bandwidth: () => { lastCommand = 'bandwidth'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">Download: 0.00 Mbps</div>`; },
+            ping: () => { lastCommand = 'ping'; achievementsConsecutiveCount = 0; return `<div class="terminal-line">PING void...</div>`; },
+            trace: () => { lastCommand = 'trace'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">TRACE...</div>`; },
+            paint: () => { lastCommand = 'paint'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6699;">Paint!</div>`; },
+            compose: () => { lastCommand = 'compose'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#99ccff;">♪ ♫ ♩ ♬</div>`; },
+            architect: () => { lastCommand = 'architect'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#99cc99;">Blueprint</div>`; },
+            portrait: () => { lastCommand = 'portrait'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#cc99ff;">Portrait</div>`; },
+            pet: () => { lastCommand = 'pet'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9966;">Pet!</div>`; },
+            water: () => { lastCommand = 'water'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">Refreshed!</div>`; },
+            feed: () => { lastCommand = 'feed'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc66;">Fed!</div>`; },
+            hug: () => { lastCommand = 'hug'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff99cc;">*HUGS BACK*</div>`; },
+            highfive: () => { lastCommand = 'highfive'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">HIGH FIVE!</div>`; },
+            sudo: () => { lastCommand = 'sudo'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;">[sudo] password:</div>`; },
+            root: () => { lastCommand = 'root'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff0000;">ROOT ACCESS</div>`; },
+            admin: () => { lastCommand = 'admin'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9900;">ADMIN MODE</div>`; },
+            master: () => { lastCommand = 'master'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">MASTER DETECTIVE</div>`; },
+            legend: () => { lastCommand = 'legend'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffd700;font-size:24px;">LEGENDARY</div>`; },
+            theater: () => { lastCommand = 'theater'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6699;">*Curtain rises*</div>`; },
+            circus: () => { lastCommand = 'circus'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff9966;">Step right up!</div>`; },
+            'magic show': () => { lastCommand = 'magic show'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#9966ff;">Next trick...</div>`; },
+            comedy: () => { lastCommand = 'comedy'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffff66;">Detective crossed road?</div>`; },
+            'exit matrix': () => { lastCommand = 'exit matrix'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#00ff00;">EXITING...</div>`; },
+            'wake up': () => { lastCommand = 'wake up'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">*alarm*</div>`; },
+            'this is not real': () => { lastCommand = 'this is not real'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#666;">Correct.</div>`; },
+            'break fourth wall': () => { lastCommand = 'break fourth wall'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff66ff;">WALL: *BROKEN*</div>`; },
+            'developer message': () => { lastCommand = 'developer message'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#66ccff;">Thanks for exploring!</div>`; },
+            credits: () => { lastCommand = 'credits'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">Created: swobabobs</div>`; },
+            'the end': () => { lastCommand = 'the end'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ff6666;font-size:32px;">THE END</div>`; },
+            'new game+': () => { stats={commandsExecuted:0,gamesPlayed:0,puzzlesSolved:0,easterEggsFound:0}; achievements=[]; lastCommand = 'new game+'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffcc00;">NEW GAME+</div>`; },
+            'true ending': () => { if(stats.commandsExecuted>=50&&stats.easterEggsFound>=10){lastCommand = 'true ending'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#ffd700;font-size:24px;">TRUE ENDING</div>`;} lastCommand = 'true ending'; achievementsConsecutiveCount = 0; return `<div class="terminal-line" style="color:#666;">TRUE ENDING LOCKED</div>`; }
+        };
+
+        // Konami code handler
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            const konamiKeys = ['arrowup', 'arrowdown'];
+            if (konamiKeys.includes(key)) {
+                if (key === 'arrowup' && (konamiIndex === 0 || konamiIndex === 1)) konamiIndex++;
+                else if (key === 'arrowdown' && (konamiIndex === 2 || konamiIndex === 3)) {
+                    konamiIndex++;
+                    if (konamiIndex === 4) {
+                        setTimeout(() => {
+                            const result = commands['up up down down']();
+                            const resultDiv = document.createElement('div');
+                            resultDiv.innerHTML = result;
+                            terminalContent.appendChild(resultDiv);
+                            terminalBody.scrollTop = terminalBody.scrollHeight;
+                        }, 500);
+                        konamiIndex = 0;
+                    }
+                } else konamiIndex = 0;
+            }
+        });
+
+        // Main input handler
+        terminalInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !leaveTriggered) {
+                const input = this.value.trim();
+                if (input) {
+                    const timeAchievementMsg = checkTimeAchievements();
+                    
+                    if (echoMode && input.toLowerCase() !== 'echo') {
+                        const echoDiv = document.createElement('div');
+                        echoDiv.className = 'terminal-line';
+                        echoDiv.textContent = `> ${input}`;
+                        terminalContent.appendChild(echoDiv);
+                    }
+
+                    const inputLine = document.createElement('div');
+                    inputLine.className = 'terminal-line';
+                    inputLine.innerHTML = `<span class="prompt">${prompt.textContent}</span> ${input}`;
+                    terminalContent.appendChild(inputLine);
+
+                    const inputLower = input.toLowerCase();
+                    
+                    if (commands[inputLower]) {
+                        const result = commands[inputLower]();
+                        if (result) {
+                            const resultDiv = document.createElement('div');
+                            resultDiv.innerHTML = currentCharacterMode ? transformText(result, currentCharacterMode) : result;
+                            terminalContent.appendChild(resultDiv);
+                        }
+                    } else {
+                        const parts = input.split(' ');
+                        const cmd = parts[0].toLowerCase();
+                        const args = parts.slice(1);
+
+                        if (commands[cmd]) {
+                            const result = commands[cmd](...args);
+                            if (result) {
+                                const resultDiv = document.createElement('div');
+                                resultDiv.innerHTML = currentCharacterMode ? transformText(result, currentCharacterMode) : result;
+                                terminalContent.appendChild(resultDiv);
+                            }
+                        } else if (cmd !== '') {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'terminal-line';
+                            errorDiv.style.color = terminalWindow.classList.contains('memory-mode') ? '#000' : (terminalWindow.classList.contains('repentance-mode') ? '#ff6666' : '#ff0000');
+                            errorDiv.textContent = `Command not found: ${cmd}. Type "help" for guidance.`;
+                            terminalContent.appendChild(errorDiv);
+                        }
+                    }
+                    
+                    if (timeAchievementMsg) {
+                        const timeDiv = document.createElement('div');
+                        timeDiv.innerHTML = timeAchievementMsg;
+                        terminalContent.insertBefore(timeDiv, terminalContent.firstChild);
+                    }
+
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                }
+                this.value = '';
+            }
+        });
+
+        terminalInput.addEventListener('click', () => terminalInput.focus());
+        document.addEventListener('click', () => terminalInput.focus());
+        terminalInput.focus();
+
+        setTimeout(() => {
+            const bootLines = ["Establishing secure connection...", "Loading investigation database...", "Mounting evidence files...", "Connection established."];
+            bootLines.forEach((line, index) => {
+                setTimeout(() => {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'terminal-line';
+                    lineDiv.style.color = '#666';
+                    lineDiv.textContent = line;
+                    terminalContent.appendChild(lineDiv);
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                }, index * 300);
+            });
+        }, 1000);
+    </script>
+</body>
+</html>
